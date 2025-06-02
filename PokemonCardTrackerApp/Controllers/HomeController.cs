@@ -10,7 +10,7 @@ namespace PokemonCardTrackerApp.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class HomeController : Controller
+    public class HomeController : ControllerBase
     {
         private readonly ILogger<HomeController> _logger;
 
@@ -20,6 +20,7 @@ namespace PokemonCardTrackerApp.Controllers
             _logger = logger;
         }
 
+        [HttpGet]
         public async Task <IActionResult> Index()
         {
             string APIKey = "d055fa14-e9d3-44d8-9c0d-54a1199e1cc0";
@@ -43,26 +44,44 @@ namespace PokemonCardTrackerApp.Controllers
             {
                 Console.WriteLine($"Error: {ex.Message}");
             }
-
-            return View(cardViewModel);
+            return Ok(cardViewModel);
+            //return View(cardViewModel);
         }
 
-       
+
         [HttpGet("hello")]
         public IActionResult Hello()
         {
-            return Ok(new { message = "Hello from .NET Core!" });
+            return Ok(new { message = "Hello from .NET Core! WooHoo!!" });
         }
 
-        public IActionResult Privacy()
+        [HttpGet("card")]
+        public async Task<IActionResult> GetCard()
         {
-            return View();
+            string APIKey = "d055fa14-e9d3-44d8-9c0d-54a1199e1cc0";
+            PokemonApiClient pokeClient = new PokemonApiClient(APIKey);
+            var cardViewModel = new PokemonCardViewModel();
+
+            try
+            {
+                var filter = PokemonFilterBuilder.CreatePokemonFilter().AddName("Darkrai");
+                var cards = await pokeClient.GetApiResourceAsync<PokemonCard>(filter);
+                var cardmodels = cards.Results.ToList();
+
+                cardViewModel.CardName = cardmodels.FirstOrDefault().Name;
+                cardViewModel.CardImageUrl = cardmodels.FirstOrDefault().Images.Small.AbsoluteUri;
+
+                Console.WriteLine($"Found {cards.Count} cards matching 'darkrai':\n");
+
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+            return Ok(cardViewModel);
         }
 
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        }
+
     }
 }
